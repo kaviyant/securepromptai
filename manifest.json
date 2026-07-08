@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "SecurePrompt AI",
+  "version": "1.0.0",
+  "description": "Enterprise-grade prompt security. Scans, sanitizes, and blocks sensitive prompts on ChatGPT, Gemini, Claude, Copilot, Grok, Perplexity, DeepSeek, and OpenRouter.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "settings.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://chat.openai.com/*",
+        "*://gemini.google.com/*",
+        "*://claude.ai/*",
+        "*://copilot.microsoft.com/*",
+        "*://*.bing.com/*",
+        "*://grok.com/*",
+        "*://perplexity.ai/*",
+        "*://*.perplexity.ai/*",
+        "*://chat.deepseek.com/*",
+        "*://openrouter.ai/*"
+      ],
+      "js": [
+        "config.js",
+        "utils.js",
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

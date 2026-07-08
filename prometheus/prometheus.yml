@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s      # Fast interval for demo and near real-time dashboards
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'secureprompt_backend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['backend:8000'] # Matches the service name in docker-compose.yml

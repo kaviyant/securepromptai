@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurePrompt AI - Enterprise Admin Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+    <!-- Chart.js and Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-mode">
+    <div class="dashboard-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i data-lucide="shield-alert" class="brand-icon"></i>
+                <div class="brand-text">
+                    <h1>SecurePrompt AI</h1>
+                    <span>Enterprise Firewall</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="overview">
+                    <i data-lucide="layout-dashboard"></i> Overview
+                </a>
+                <a href="#" class="nav-item" data-tab="history">
+                    <i data-lucide="history"></i> Prompt Logs
+                </a>
+                <a href="#" class="nav-item" data-tab="threats">
+                    <i data-lucide="alert-triangle"></i> Threat Alerts
+                    <span class="badge" id="alerts-count-badge">0</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="shadow-ai">
+                    <i data-lucide="ghost"></i> Shadow AI Audit
+                </a>
+                <a href="#" class="nav-item" data-tab="policies">
+                    <i data-lucide="sliders"></i> Policy Settings
+                </a>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div class="user-details">
+                    <span class="username">Admin Account</span>
+                    <span class="role">Security Operations</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Body -->
+        <main class="main-content">
+            
+            <!-- Header bar -->
+            <header class="header">
+                <div class="page-title">
+                    <h2 id="current-tab-title">Security Dashboard</h2>
+                    <p id="current-tab-subtitle">Real-time prompt firewall statistics and audit logs.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="refresh-data-btn">
+                        <i data-lucide="refresh-cw"></i> Refresh
+                    </button>
+                    <button class="btn btn-primary" id="download-audit-btn">
+                        <i data-lucide="download"></i> Export Report
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB CONTENT: OVERVIEW -->
+            <section class="tab-pane active" id="tab-overview">
+                <!-- Status Cards -->
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <div class="card-icon blue"><i data-lucide="activity"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Total Scanned Prompts</span>
+                            <span class="value" id="stat-total-scans">0</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon red"><i data-lucide="shield-off"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Blocked Violations</span>
+                            <span class="value" id="stat-total-blocks">0</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon purple"><i data-lucide="percent"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Average Block Rate</span>
+                            <span class="value" id="stat-block-rate">0.0%</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon green"><i data-lucide="users"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Monitored Departments</span>
+                            <span class="value" id="stat-departments">6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="card chart-card">
+                        <h3>Risk Level Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card chart-card">
+                        <h3>Submissions by Department</h3>
+                        <div class="chart-container">
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threat alerts preview -->
+                <div class="card list-card">
+                    <div class="card-header">
+                        <h3>Recent Critical Alerts</h3>
+                        <a href="#" class="view-all-link" data-tab-link="threats">View All Alerts</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Alert Type</th>
+                                    <th>Severity</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-alerts-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">No alerts logged.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB CONTENT: HISTORY -->
+            <section class="tab-pane" id="tab-history">
+                <div class="card list-card">
+                    <div class="table-filters">
+                        <input type="text" placeholder="Search prompts..." id="history-search-input" class="search-input">
+                        <select id="history-filter-site" class="select-input">
+                            <option value="">All Platforms</option>
+                            <option value="chatgpt">ChatGPT</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="claude">Claude</option>
+                            <option value="copilot">Copilot</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User Email</th>
+                                    <th>Department</th>
+                                    <th>Target AI</th>
+                                    <th>Prompt Size</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading prompt history logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB CONTENT: THREATS -->
+            <section class="tab-pane" id="tab-threats">
+                <div class="card list-card">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Alert Category</th>
+                                    <th>Threat Score</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="threats-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading insider threat telemetry alerts...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB CONTENT: SHADOW AI -->
+            <section class="tab-pane" id="tab-shadow-ai">
+                <div class="charts-grid">
+                    <div class="card chart-card">
+                        <h3>Access Count by AI Platform</h3>
+                        <div class="chart-container">
+                            <canvas id="shadowAiChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card chart-card">
+                        <h3>Data Volume by Department (KB)</h3>
+                        <div class="chart-container">
+                            <canvas id="dataVolumeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card list-card mt-4">
+                    <h3>Monitored Domain Blueprints</h3>
+                    <div class="table-responsive mt-3">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>AI Target Platform</th>
+                                    <th>Host Matching URL Domain</th>
+                                    <th>Status</th>
+                                    <th>Policy Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>ChatGPT</td>
+                                    <td>chatgpt.com / chat.openai.com</td>
+                                    <td><span class="status-badge allowed">MONITORED</span></td>
+                                    <td>LOW</td>
+                                </tr>
+                                <tr>
+                                    <td>Gemini</td>
+                                    <td>gemini.google.com</td>
+                                    <td><span class="status-badge allowed">MONITORED</span></td>
+                                    <td>LOW</td>
+                                </tr>
+                                <tr>
+                                    <td>Claude</td>
+                                    <td>claude.ai</td>
+                                    <td><span class="status-badge allowed">MONITORED</span></td>
+                                    <td>LOW</td>
+                                </tr>
+                                <tr>
+                                    <td>Microsoft Copilot</td>
+                                    <td>copilot.microsoft.com</td>
+                                    <td><span class="status-badge warned">RESTRICTED</span></td>
+                                    <td>MEDIUM</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB CONTENT: POLICIES -->
+            <section class="tab-pane" id="tab-policies">
+                <div class="card list-card">
+                    <h3>Firewall Settings Configuration</h3>
+                    <div class="settings-form mt-4">
+                        <div class="settings-row">
+                            <div class="settings-info">
+                                <strong>Global Firewall Mode</strong>
+                                <p>Control whether the prompt firewall actively blocks requests or operates silently in audit-only mode.</p>
+                            </div>
+                            <div class="settings-control">
+                                <select id="setting-firewall-mode" class="select-input">
+                                    <option value="ENFORCE">ENFORCE (Active Block)</option>
+                                    <option value="MONITOR">MONITOR (Audit Only)</option>
+                                    <option value="BYPASS">BYPASS (Disabled)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-info">
+                                <strong>Auto Sanitize Outbound Prompts</strong>
+                                <p>Silently redact phone numbers, emails, and address names before sending prompts to external APIs.</p>
+                            </div>
+                            <div class="settings-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-auto-sanitize" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-info">
+                                <strong>Critical Score Block Threshold</strong>
+                                <p>Adjust the threshold score limit (0 to 100) above which prompts will be automatically blocked.</p>
+                            </div>
+                            <div class="settings-control">
+                                <input type="number" id="setting-risk-threshold" class="num-input" value="70" min="20" max="95">
+                            </div>
+                        </div>
+                        <div class="settings-row mt-4">
+                            <button class="btn btn-primary" id="save-settings-btn">
+                                <i data-lucide="check"></i> Save Configurations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="dashboard.js"></script>
+</body>
+</html>

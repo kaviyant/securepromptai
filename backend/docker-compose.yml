@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    container_name: secureprompt_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - secureprompt_network
+    restart: unless-stopped
+
+  # FastAPI Web Application service
+  web:
+    build: .
+    container_name: secureprompt_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=secureprompt_db
+      - ENV_MODE=production
+      - DEBUG=false
+    depends_on:
+      - mongodb
+    networks:
+      - secureprompt_network
+    restart: always
+
+volumes:
+  mongo_data:
+
+networks:
+  secureprompt_network:
+    driver: bridge

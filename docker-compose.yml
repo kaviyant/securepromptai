@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: secureprompt_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - secureprompt_network
+    restart: unless-stopped
+
+  # 2. FastAPI Backend & ML Engine
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: secureprompt_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=secureprompt_db
+      - ENV_MODE=production
+      - DEBUG=false
+      - JWT_SECRET_KEY=secureprompt_jwt_secret_key_2026_enterprise_level_security_token
+      - JWT_REFRESH_SECRET_KEY=secureprompt_jwt_refresh_secret_key_2026_enterprise_level_security_token
+      - GROQ_API_KEY=mock_api_key_for_testing
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=SecurePrompt_AI_Classifiers
+      - MLFLOW_MODEL_SYNC=true
+      - TRAIN_DEEP_LEARNING=false # Keep false on standard CPU compose deployments
+    depends_on:
+      - mongodb
+      - mlflow
+    volumes:
+      - model_cache:/workspace/model
+    networks:
+      - secureprompt_network
+    restart: always
+
+  # 3. MLflow Tracking Registry Server
+  mlflow:
+    image: python:3.10-slim
+    container_name: secureprompt_mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    entrypoint: >
+      sh -c "pip install mlflow && 
+             mlflow server \
+             --backend-store-uri sqlite:////mlflow/mlflow.db \
+             --default-artifact-root /mlflow/artifacts \
+             --host 0.0.0.0 \
+             --port 5000"
+    networks:
+      - secureprompt_network
+    restart: unless-stopped
+
+  # 4. Prometheus Metric Scraper
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: secureprompt_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - backend
+    networks:
+      - secureprompt_network
+    restart: unless-stopped
+
+  # 5. Grafana Analytics Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: secureprompt_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/local
+    depends_on:
+      - prometheus
+    networks:
+      - secureprompt_network
+    restart: unless-stopped
+
+  # 6. NGINX Production Reverse Proxy & SSL Gateway
+  nginx:
+    build:
+      context: ./nginx
+    container_name: secureprompt_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - grafana
+      - mlflow
+    networks:
+      - secureprompt_network
+    restart: always
+
+volumes:
+  mongo_data:
+  mlflow_data:
+  model_cache:
+
+networks:
+  secureprompt_network:
+    driver: bridge

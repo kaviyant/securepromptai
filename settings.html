@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - SecurePrompt AI</title>
+  <link rel="stylesheet" href="settings.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="settings-app">
+    <!-- Sidebar / Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#logo-grad)"/>
+          <path d="M12 6v11M8 10h8M9.5 13.5h5" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="logo-grad" x1="3" y1="2" x2="21" y2="23" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3B82F6"/>
+              <stop offset="1" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="logo-title">
+          <h2>SecurePrompt AI</h2>
+          <span>Enterprise Middleware</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#" class="nav-item active" id="nav-settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Configuration
+        </a>
+        <a href="history.html" class="nav-item" id="nav-history">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Audit History
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <p>Protection Status</p>
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span id="system-status">System Operational</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="main-container">
+      <header class="main-header">
+        <div>
+          <h1>Extension Configuration</h1>
+          <p class="subtitle">Manage backend integration endpoints and prompt interception filters</p>
+        </div>
+        <div class="theme-badge">
+          <span class="badge">Security Module</span>
+        </div>
+      </header>
+
+      <!-- Alert Notification Banner -->
+      <div id="alert-banner" class="alert-banner hidden">
+        <span id="alert-message">Settings saved successfully!</span>
+        <button id="alert-close" class="alert-close-btn">&times;</button>
+      </div>
+
+      <div class="settings-content">
+        <!-- Section 1: Backend Integration -->
+        <section class="section-card">
+          <div class="section-title-group">
+            <h3>Backend API Integration</h3>
+            <p>Define connection details for your SecurePrompt AI validation API.</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="backend-url">FastAPI Server URL</label>
+            <div class="input-action-group">
+              <input type="url" id="backend-url" placeholder="http://localhost:8000" required>
+              <button type="button" id="btn-test-conn" class="btn-action">
+                <span id="test-text">Test Connection</span>
+                <div class="test-loader hidden" id="test-loader"></div>
+              </button>
+            </div>
+            <p class="help-text">Point this to the scanning backend server. Defaults to localhost for development.</p>
+            <div id="conn-result" class="conn-result hidden"></div>
+          </div>
+        </section>
+
+        <!-- Section 2: Platform Integration Filters -->
+        <section class="section-card">
+          <div class="section-title-group">
+            <h3>AI Platforms Coverage</h3>
+            <p>Toggle real-time intercepting controls on individual artificial intelligence portals.</p>
+          </div>
+          
+          <div class="grid-toggles" id="site-toggles-container">
+            <!-- Dynamically populated from JS or hardcoded for speed -->
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>ChatGPT</h4>
+                <span>chatgpt.com</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-chatgpt" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>Gemini</h4>
+                <span>gemini.google.com</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-gemini" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>Claude</h4>
+                <span>claude.ai</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-claude" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>Microsoft Copilot</h4>
+                <span>copilot.microsoft.com</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-copilot" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>Grok</h4>
+                <span>grok.com</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-grok" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>Perplexity</h4>
+                <span>perplexity.ai</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-perplexity" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>DeepSeek</h4>
+                <span>chat.deepseek.com</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-deepseek" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item-box">
+              <div class="toggle-detail">
+                <h4>OpenRouter</h4>
+                <span>openrouter.ai</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="site-openrouter" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Extra Risk Controls -->
+        <section class="section-card">
+          <div class="section-title-group">
+            <h3>Scanning Preferences</h3>
+            <p>Configure sensitivity metrics and system behaviors.</p>
+          </div>
+
+          <div class="form-grid-stack">
+            <!-- Row 1: Sensitivity Threshold -->
+            <div class="form-grid-row">
+              <div class="form-grid-label-group">
+                <label for="sensitivity-slider">Sensitivity Threshold (<span id="sensitivity-display">50</span>%)</label>
+                <p class="help-text">Adjust how strictly prompts are audited. High sensitivity thresholds scan more keywords and lower false-negative rates.</p>
+              </div>
+              <div class="form-grid-control">
+                <div class="slider-group">
+                  <input type="range" id="sensitivity-slider" min="1" max="100" value="50">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Row 2: Interception Mode -->
+            <div class="form-grid-row">
+              <div class="form-grid-label-group">
+                <label for="opt-interception-mode">Interception Mode</label>
+                <p class="help-text">Determine system action when sensitive data is detected. Auto-Sanitize modes strip credentials automatically.</p>
+              </div>
+              <div class="form-grid-control">
+                <select id="opt-interception-mode" class="form-select">
+                  <option value="MANUAL">Interactive Confirmation (Edit Manually)</option>
+                  <option value="AUTO_REVIEW">Auto-Sanitize & Review (Autofill & Manual Send)</option>
+                  <option value="AUTO_SEND">Silent Auto-Sanitize & Send (Zero Interaction)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 3: Offline Fallback -->
+            <div class="form-grid-row">
+              <div class="form-grid-label-group">
+                <label for="opt-offline-action">System Offline Fallback</label>
+                <p class="help-text">Set security policy to enforce if the local FastAPI scanning API server is offline or unreachable.</p>
+              </div>
+              <div class="form-grid-control">
+                <select id="opt-offline-action" class="form-select">
+                  <option value="WARN">Display Interruption Warning (Recommended)</option>
+                  <option value="ALLOW">Allow prompts to pass through immediately</option>
+                  <option value="BLOCK">Block all submissions until backend online</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Save Button Section -->
+        <div class="action-footer">
+          <button type="button" id="btn-save-settings" class="btn-save">
+            Save All Configurations
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+# ==========================================
+# SecurePrompt AI - Git Exclusion Rules
+# ==========================================
+
+# 1. Environment & Credentials
+.env
+.env.production
+.env.local
+.env.*.local
+*.env
+secrets.json
+
+# 2. Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+.venv
+
+# 3. Python Compiler & Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+htmlcov/
+.coverage
+.coverage.*
+
+# 4. Machine Learning & Artifact Tracking
+mlruns/
+mlflow.db
+mlflow.db-journal
+mlruns.db
+model/vectorizer.pkl
+model/classifier.pkl
+model/spacy_ner/
+
+# 5. DVC (Data Version Control)
+# Ignore actual tracked data files and local DVC cache, but DO commit *.dvc files
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+data/*.csv
+data/*.xlsx
+data/*.json
+!data/*.dvc
+
+# 6. Container Telemetry & Databases Data Mounts
+# Exclude persistent database files mounted by Docker Compose
+mongodb_data/
+prometheus/data/
+grafana/data/
+nginx/logs/
+
+# 7. IDE & System OS Metadata
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
+ehthumbs.db

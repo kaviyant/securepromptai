@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Logs - SecurePrompt AI</title>
+  <link rel="stylesheet" href="history.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="history-app">
+    <!-- Sidebar / Navigation (Mirrors Settings for consistent design) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#logo-grad)"/>
+          <path d="M12 6v11M8 10h8M9.5 13.5h5" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="logo-grad" x1="3" y1="2" x2="21" y2="23" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3B82F6"/>
+              <stop offset="1" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="logo-title">
+          <h2>SecurePrompt AI</h2>
+          <span>Enterprise Middleware</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="settings.html" class="nav-item" id="nav-settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Configuration
+        </a>
+        <a href="#" class="nav-item active" id="nav-history">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Audit History
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <p>Protection Status</p>
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span id="system-status">System Operational</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="main-container">
+      <header class="main-header">
+        <div>
+          <h1>Security Audit Logs</h1>
+          <p class="subtitle">Review security scan transactions, flagged items, and filter intercepts</p>
+        </div>
+        <button id="btn-clear-logs" class="btn-clear">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Clear Audit Logs
+        </button>
+      </header>
+
+      <!-- Dashboard Controls -->
+      <section class="controls-card">
+        <div class="search-box">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="search-input" placeholder="Search prompts or reasons...">
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-item">
+            <label for="filter-site">AI Platform</label>
+            <select id="filter-site" class="form-select">
+              <option value="all">All Sites</option>
+              <option value="chatgpt">ChatGPT</option>
+              <option value="gemini">Gemini</option>
+              <option value="claude">Claude</option>
+              <option value="copilot">Copilot</option>
+              <option value="grok">Grok</option>
+              <option value="perplexity">Perplexity</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filter-risk">Risk Level</label>
+            <select id="filter-risk" class="form-select">
+              <option value="all">All Levels</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+              <option value="None">None/Allowed</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Logs Display Area -->
+      <div class="logs-container">
+        <!-- Table for large viewports -->
+        <div class="table-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>AI Platform</th>
+                <th>Risk Level</th>
+                <th>Action</th>
+                <th>Prompt Summary</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">🛡️</div>
+          <h3>No Scans Found</h3>
+          <p>Scanned prompts will appear here once you submit requests on target AI platforms.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal Overlay -->
+  <div id="detail-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <header class="modal-header">
+        <h3>Scan Details</h3>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </header>
+      <div class="modal-body" id="modal-body-content">
+        <!-- Dynamically populated detail logs -->
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="utils.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>
