@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const alertMessage = document.getElementById('alert-message');
   const alertClose = document.getElementById('alert-close');
   
+  // Document Indexer Elements
+  const adminTokenInput = document.getElementById('admin-token');
+  const docNameInput = document.getElementById('doc-name');
+  const docFileInput = document.getElementById('doc-file');
+  const btnUploadDoc = document.getElementById('btn-upload-doc');
+  const uploadText = document.getElementById('upload-text');
+  const uploadLoader = document.getElementById('upload-loader');
+  const uploadResult = document.getElementById('upload-result');
+  
   let currentSettings = null;
  
   // 1. Load Configurations from Chrome Storage
@@ -37,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     sensitivityDisplay.textContent = sensitivitySlider.value;
     offlineActionSelect.value = currentSettings.offlineFallback || 'WARN';
     interceptionModeSelect.value = currentSettings.interceptionMode || 'MANUAL';
+    adminTokenInput.value = currentSettings.adminToken || '';
     
     // Fill AI Site Checkbox Toggles
     for (const siteKey of Object.keys(CONFIG.SITES)) {
@@ -127,6 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       sensitivityThreshold: parseInt(sensitivitySlider.value),
       interceptionMode: interceptionModeSelect.value,
       offlineFallback: offlineActionSelect.value,
+      adminToken: adminTokenInput.value.trim(),
       sites: siteSettings
     };
 
@@ -135,6 +146,76 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentSettings = updatedSettings;
     });
   });
+
+  // 3b. Upload and Index Document via FastAPI Backend
+  btnUploadDoc.addEventListener('click', async () => {
+    const url = backendUrlInput.value.trim();
+    const token = adminTokenInput.value.trim();
+    const docName = docNameInput.value.trim();
+    const file = docFileInput.files[0];
+
+    if (!url) {
+      showUploadStatus(false, 'Please test/verify your Backend URL first.');
+      return;
+    }
+    if (!token) {
+      showUploadStatus(false, 'Please enter your Admin Authorization Token.');
+      return;
+    }
+    if (!file) {
+      showUploadStatus(false, 'Please select a document file to upload.');
+      return;
+    }
+
+    // Reset status
+    uploadResult.className = 'conn-result hidden';
+    uploadText.textContent = 'Uploading...';
+    uploadLoader.classList.remove('hidden');
+    btnUploadDoc.disabled = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Build target URL
+      let uploadUrl = `${url.replace(/\/+$/, '')}/api/documents/index`;
+      if (docName) {
+        uploadUrl += `?doc_id=${encodeURIComponent(docName)}`;
+      }
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const resData = await response.json();
+
+      if (response.ok) {
+        showUploadStatus(true, `Success: ${resData.message || 'Document indexed successfully!'}`);
+        docFileInput.value = ''; // clear file input
+        docNameInput.value = ''; // clear name input
+      } else {
+        // If server returns error details as array (validation failures)
+        const errorMsg = typeof resData.detail === 'string' ? resData.detail : JSON.stringify(resData.detail);
+        showUploadStatus(false, `Upload failed: ${errorMsg || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error('Document upload failed:', error);
+      showUploadStatus(false, 'Connection failed. Please ensure the backend is running and CORS is configured.');
+    } finally {
+      uploadText.textContent = 'Upload & Index Document';
+      uploadLoader.classList.add('hidden');
+      btnUploadDoc.disabled = false;
+    }
+  });
+
+  function showUploadStatus(success, message) {
+    uploadResult.textContent = message;
+    uploadResult.className = `conn-result ${success ? 'success' : 'error'}`;
+  }
 
   // 4. Alert notifications helper
   function showAlert(success, message) {

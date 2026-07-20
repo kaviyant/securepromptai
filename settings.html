@@ -238,6 +238,38 @@
           </div>
         </section>
 
+        <!-- Section 4: Confidential Document Indexer -->
+        <section class="section-card">
+          <div class="section-title-group">
+            <h3>Confidential Document Indexer</h3>
+            <p>Upload corporate documents (PDF, DOCX, CSV, Excel, TXT, MD) to the similarity database so that similar prompts are blocked.</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="admin-token">Admin Authorization Token</label>
+            <input type="password" id="admin-token" placeholder="Bearer Token from Admin Dashboard">
+            <p class="help-text">Required to authenticate document upload requests to the backend.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="doc-name">Custom Document Name / ID (Optional)</label>
+            <input type="text" id="doc-name" placeholder="e.g. project_roadmap_2026 (Defaults to filename)">
+          </div>
+
+          <div class="form-group">
+            <label for="doc-file">Choose Document File</label>
+            <input type="file" id="doc-file" accept=".txt,.md,.csv,.pdf,.docx,.xlsx,.xls" required>
+          </div>
+
+          <div class="action-footer" style="padding: 0; margin-top: 15px;">
+            <button type="button" id="btn-upload-doc" class="btn-action" style="width: 100%; display: flex; justify-content: center; align-items: center;">
+              <span id="upload-text">Upload & Index Document</span>
+              <div class="test-loader hidden" id="upload-loader"></div>
+            </button>
+          </div>
+          <div id="upload-result" class="conn-result hidden" style="margin-top: 10px;"></div>
+        </section>
+
         <!-- Save Button Section -->
         <div class="action-footer">
           <button type="button" id="btn-save-settings" class="btn-save">

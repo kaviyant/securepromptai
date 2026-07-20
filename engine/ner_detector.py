@@ -5,9 +5,11 @@ logger = logging.getLogger("secureprompt")
 
 try:
     import spacy
+    import spacy.cli
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
+
 
 class NerDetector:
     def __init__(self):
@@ -30,7 +32,6 @@ class NerDetector:
         except OSError:
             logger.info("spaCy en_core_web_sm model not found. Downloading...")
             try:
-                import spacy.cli
                 spacy.cli.download("en_core_web_sm")
                 self.nlp = spacy.load("en_core_web_sm")
                 logger.info("spaCy model downloaded and loaded successfully.")

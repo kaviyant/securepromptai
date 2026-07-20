@@ -89,3 +89,60 @@ class FileService:
                     os.remove(temp_path)
                 except Exception as e:
                     logger.error(f"Failed to cleanup temp file {temp_path}: {e}")
+
+    async def index_file(
+        self, 
+        file_bytes: bytes, 
+        filename: str,
+        doc_id: str
+    ) -> Dict[str, Any]:
+        """
+        Saves file bytes to a temporary location, extracts text,
+        and registers the document in the similarity engine index.
+        """
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in [".txt", ".md", ".csv", ".pdf", ".docx", ".xlsx", ".xls"]:
+            return {
+                "filename": filename,
+                "indexed": False,
+                "error": f"Unsupported file format extension: {ext}"
+            }
+
+        temp_dir = os.path.abspath("backend/scratch")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        fd, temp_path = tempfile.mkstemp(suffix=ext, dir=temp_dir)
+        try:
+            with os.fdopen(fd, 'wb') as tmp:
+                tmp.write(file_bytes)
+            
+            # Index document
+            success = self.similarity_engine.add_document(temp_path, doc_id)
+            
+            if success:
+                return {
+                    "filename": filename,
+                    "doc_id": doc_id,
+                    "indexed": True,
+                    "message": f"Successfully indexed document '{filename}' as ID '{doc_id}'."
+                }
+            else:
+                return {
+                    "filename": filename,
+                    "indexed": False,
+                    "error": "Similarity engine failed to index document."
+                }
+
+        except Exception as e:
+            logger.error(f"File indexer failed on {filename}: {e}")
+            return {
+                "filename": filename,
+                "indexed": False,
+                "error": f"Index processing failed: {str(e)}"
+            }
+        finally:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception as e:
+                    logger.error(f"Failed to cleanup temp file {temp_path}: {e}")

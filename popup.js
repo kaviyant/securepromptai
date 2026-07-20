@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         statWarned.textContent = stats.totalWarned || 0;
       }
     });
+
+    // Check connection to backend
+    await checkBackendConnection();
   }
 
   function updateGlobalStatusText(enabled) {
@@ -85,6 +88,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       statusText.textContent = 'Paused';
       statusText.className = 'status-value inactive';
+    }
+  }
+
+  async function checkBackendConnection() {
+    const connectionText = document.getElementById('connection-text');
+    const connectionIndicator = document.getElementById('connection-indicator');
+    
+    if (!connectionText || !connectionIndicator) return;
+    
+    try {
+      const backendUrl = currentSettings.backendUrl || CONFIG.DEFAULT_BACKEND_URL;
+      const healthUrl = `${backendUrl.replace(/\/+$/, '')}/`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 seconds timeout
+      
+      const response = await fetch(healthUrl, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.status >= 200 && response.status < 500) {
+        connectionText.textContent = 'Connected';
+        connectionText.className = 'status-value active';
+        connectionIndicator.className = 'site-dot active';
+      } else {
+        connectionText.textContent = 'Offline';
+        connectionText.className = 'status-value error';
+        connectionIndicator.className = 'site-dot error';
+      }
+    } catch (e) {
+      connectionText.textContent = 'Offline';
+      connectionText.className = 'status-value error';
+      connectionIndicator.className = 'site-dot error';
     }
   }
 

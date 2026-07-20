@@ -76,10 +76,17 @@ class PromptFirewall:
         risk_score = score_result["risk_score"]
         risk_level = score_result["risk_level"]
         
-        # Security Override: Escalate direct credential or token leaks to CRITICAL
+        # Security Override: Escalate direct credential or token leaks to CRITICAL,
+        # and high document similarity matches to HIGH
         if sensitive_level == "CRITICAL" or code_result["has_secrets"]:
             risk_level = "CRITICAL"
             risk_score = max(risk_score, 90)
+        elif similarity_result["score"] > 0.6:
+            risk_level = "HIGH"
+            risk_score = max(risk_score, 75)
+        elif sensitive_level in ["HIGH", "MEDIUM"]:
+            risk_level = "MEDIUM"
+            risk_score = max(risk_score, 50)
         
         action = "ALLOW"
         explanation = "Approved: Prompt is compliant and contains no sensitive data."

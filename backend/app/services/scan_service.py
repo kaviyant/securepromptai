@@ -28,7 +28,6 @@ class ScanService:
             sensitivity = settings_doc.get("sensitivityThreshold", 50)
             
         scan_result = PromptScanner.scan(scan_in.prompt, sensitivity_threshold=sensitivity)
-        classification = ContentClassifier.classify(scan_in.prompt)
 
         # 2. Compile Log Entry
         # Fetch user's department to classify metric shares
@@ -37,6 +36,27 @@ class ScanService:
             user = await db.users.find_one({"username": username})
             if user:
                 department = user.get("department", "Engineering")
+
+        # Run advanced firewall (includes similarity check, code detector, 9-class classifier)
+        from engine.firewall import PromptFirewall
+        firewall = PromptFirewall()
+        firewall_res = firewall.scan_and_decide(
+            prompt_text=scan_in.prompt,
+            department=department
+        )
+
+        # Override scan result with firewall decisions
+        scan_result["action"] = firewall_res["action"]
+        scan_result["risk_score"] = firewall_res["risk_score"]
+        scan_result["risk_level"] = firewall_res["risk_level"]
+        scan_result["sanitized_prompt"] = firewall_res["sanitized_prompt"]
+        scan_result["reason"] = firewall_res["explanation"]
+
+        compliance_status = "Compliant"
+        if firewall_res["risk_level"] in ["CRITICAL", "HIGH"]:
+            compliance_status = "Critical"
+        elif firewall_res["risk_level"] == "MEDIUM":
+            compliance_status = "Warning"
 
         log_doc = {
             "timestamp": datetime.fromtimestamp(scan_in.timestamp / 1000.0, tz=timezone.utc),
@@ -51,8 +71,8 @@ class ScanService:
             "action": scan_result["action"],
             "reason": scan_result["reason"],
             "flaggedTerms": scan_result["flagged_terms"],
-            "category": classification["category"],
-            "complianceStatus": classification["compliance_status"],
+            "category": firewall_res["category"],
+            "complianceStatus": compliance_status,
             "browserInfo": scan_in.browser_info.model_dump(),
             "session_id": scan_in.session_id
         }

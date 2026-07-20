@@ -134,6 +134,10 @@ body {
   color: var(--text-sub);
 }
 
+.status-value.error {
+  color: var(--danger);
+}
+
 /* Toggle Switch */
 .switch {
   position: relative;
@@ -202,6 +206,11 @@ input:checked + .slider:before {
 .site-dot.active {
   background-color: var(--success);
   box-shadow: 0 0 8px var(--success);
+}
+
+.site-dot.error {
+  background-color: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
 }
 
 .site-details {

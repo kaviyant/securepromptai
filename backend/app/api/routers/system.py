@@ -203,3 +203,39 @@ async def scan_uploaded_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"File scanning failed: {str(e)}"
         )
+
+@router.post("/api/documents/index", response_model=Dict[str, Any])
+async def index_document(
+    doc_id: str = None,
+    file: UploadFile = File(...),
+    current_admin: Dict[str, Any] = Depends(get_current_admin)
+):
+    """
+    Uploads a business document and indexes it in the similarity database.
+    Subsequent user prompts similar to this document will be blocked by the PromptFirewall.
+    Restricted to Admins.
+    """
+    try:
+        contents = await file.read()
+        target_doc_id = doc_id or file.filename
+        
+        result = await file_service.index_file(
+            file_bytes=contents,
+            filename=file.filename,
+            doc_id=target_doc_id
+        )
+        
+        if not result.get("indexed"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result.get("error", "Failed to index file.")
+            )
+            
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to index document: {str(e)}"
+        )

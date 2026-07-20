@@ -1,12 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Any, Dict
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from app.config.settings import settings
-
-# 1. Hashing Configuration
-# passlib uses bcrypt to hash passwords securely
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT Signature algorithms
 ALGORITHM = "HS256"
@@ -15,13 +11,21 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verifies a plain text password matches its hashed representation.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
     """
     Generates a secure crypt hash of a password using bcrypt.
     """
-    return pwd_context.hash(password)
+    # Enforce maximum 72 bytes limit for bcrypt
+    pwd_bytes = password.encode('utf-8')
+    if len(pwd_bytes) > 72:
+        pwd_bytes = pwd_bytes[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
 # 2. Token generation
 

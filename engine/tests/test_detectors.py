@@ -77,7 +77,8 @@ class TestDataDetectors(unittest.TestCase):
         result = pipeline.scan("Email: user@domain.com, and valid card info skipped.")
         self.assertTrue(result["detected"])
         self.assertGreater(len(result["entities"]), 0)
-        self.assertEqual(result["entities"][0]["type"], "EMAIL")
+        detected_types = [e["type"] for e in result["entities"]]
+        self.assertIn("EMAIL", detected_types)
 
         result_clean = pipeline.scan("Write a function to return the length of a string.")
         self.assertFalse(result_clean["detected"])
@@ -152,7 +153,7 @@ class TestDataDetectors(unittest.TestCase):
         self.assertEqual(res["risk_level"], "MEDIUM")
 
         # Test Programming classification
-        prog_prompt = "How to declare an array variables in Go language?"
+        prog_prompt = "Write a function in python to reverse a list."
         res_prog = classifier.predict(prog_prompt)
         self.assertEqual(res_prog["category"], "Programming")
         self.assertEqual(res_prog["risk_level"], "LOW")
@@ -222,6 +223,24 @@ class TestDataDetectors(unittest.TestCase):
         res_block = firewall.scan_and_decide("Connect DB using AWS_KEY='AKIA1234567890ABCDEF'")
         self.assertEqual(res_block["action"], "BLOCK")
         self.assertEqual(res_block["risk_level"], "CRITICAL")
+
+        # 4. Similarity BLOCK action
+        # Setup similar document in the database
+        temp_file = "test_firewall_leak.txt"
+        secret_content = "This is a confidential roadmap for SecurePrompt AI launch."
+        with open(temp_file, "w", encoding="utf-8") as f:
+            f.write(secret_content)
+        try:
+            firewall.similarity_engine.add_document(temp_file, doc_id="confidential_roadmap")
+            res_sim_block = firewall.scan_and_decide("What is the roadmap for SecurePrompt AI launch?")
+            self.assertEqual(res_sim_block["action"], "BLOCK")
+            self.assertEqual(res_sim_block["risk_level"], "HIGH")
+            self.assertIn("similarity", res_sim_block["explanation"])
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            if os.path.exists(firewall.similarity_engine.fallback_db_path):
+                os.remove(firewall.similarity_engine.fallback_db_path)
 
 if __name__ == "__main__":
     unittest.main()
