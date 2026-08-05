@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from engine.dataset_generator import DatasetGenerator
+from engine.mlflow_utils import MLflowManager
 
 # Load backend/.env file if it exists to get the HF_TOKEN
 ENV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", ".env")
@@ -149,7 +150,8 @@ def collect_hf_datasets(sample_size=1000):
 
 def train_and_save_classifiers(df):
     """
-    Trains the Binary prompt classifier and the 9-Class category classifier.
+    Trains the Binary prompt classifier and the 9-Class category classifier,
+    and logs the runs to MLflow.
     """
     # ==========================================
     # 1. Train Binary Sensitivity Classifier
@@ -166,28 +168,40 @@ def train_and_save_classifiers(df):
     X_train_bin_vec = bin_vectorizer.fit_transform(X_train_bin)
     X_val_bin_vec = bin_vectorizer.transform(X_val_bin)
 
-    bin_classifier = LogisticRegression(C=2.0, max_iter=500)
-    bin_classifier.fit(X_train_bin_vec, y_train_bin)
+    with MLflowManager.start_run(run_name="HF_Binary_Classifier") as run:
+        bin_classifier = LogisticRegression(C=2.0, max_iter=500)
+        bin_classifier.fit(X_train_bin_vec, y_train_bin)
 
-    preds_bin = bin_classifier.predict(X_val_bin_vec)
-    print(f"Binary Classifier Accuracy: {accuracy_score(y_val_bin, preds_bin):.4f}")
-    print(classification_report(y_val_bin, preds_bin))
+        preds_bin = bin_classifier.predict(X_val_bin_vec)
+        val_acc_bin = accuracy_score(y_val_bin, preds_bin)
+        print(f"Binary Classifier Accuracy: {val_acc_bin:.4f}")
+        print(classification_report(y_val_bin, preds_bin))
 
-    # Save Binary weights
-    with open(os.path.join(MODEL_DIR, "vectorizer.pkl"), "wb") as f:
-        pickle.dump(bin_vectorizer, f)
-    with open(os.path.join(MODEL_DIR, "classifier.pkl"), "wb") as f:
-        pickle.dump(bin_classifier, f)
-    print("Binary Classifier weights saved successfully.")
+        # Log parameters and metrics to MLflow
+        MLflowManager.log_params({
+            "model_architecture": "TF-IDF + Logistic Regression (HF Dataset)",
+            "c_regularization": 2.0,
+            "train_size": len(X_train_bin),
+            "val_size": len(X_val_bin),
+            "dataset_size": len(df),
+            "vectorizer_max_features": 2000
+        })
+        MLflowManager.log_metrics({
+            "accuracy": val_acc_bin
+        })
+
+        # Save Binary weights
+        with open(os.path.join(MODEL_DIR, "vectorizer.pkl"), "wb") as f:
+            pickle.dump(bin_vectorizer, f)
+        with open(os.path.join(MODEL_DIR, "classifier.pkl"), "wb") as f:
+            pickle.dump(bin_classifier, f)
+        print("Binary Classifier weights saved successfully.")
 
     # ==========================================
     # 2. Train 9-Class Category Classifier
     # ==========================================
     print("\n--- Training 9-Class Category Classifier ---")
-    # Map raw HuggingFace categories to the exact engine classes:
-    # Allowed classes: "General", "Programming", "Finance", "Healthcare", "HR", "Legal", "Customer Data", "Internal Document", "Security"
-    
-    # Standardize column mapping
+    # Map raw HuggingFace categories to the exact engine classes
     class_mapping = {
         "Healthcare": "Healthcare",
         "Finance": "Finance",
@@ -213,21 +227,45 @@ def train_and_save_classifiers(df):
     X_train_cat_vec = cat_vectorizer.fit_transform(X_train_cat)
     X_val_cat_vec = cat_vectorizer.transform(X_val_cat)
 
-    cat_classifier = LogisticRegression(C=2.0, max_iter=500)
-    cat_classifier.fit(X_train_cat_vec, y_train_cat)
+    with MLflowManager.start_run(run_name="HF_9Class_Classifier") as run:
+        cat_classifier = LogisticRegression(C=2.0, max_iter=500)
+        cat_classifier.fit(X_train_cat_vec, y_train_cat)
 
-    preds_cat = cat_classifier.predict(X_val_cat_vec)
-    print(f"9-Class Classifier Accuracy: {accuracy_score(y_val_cat, preds_cat):.4f}")
-    print(classification_report(y_val_cat, preds_cat))
+        preds_cat = cat_classifier.predict(X_val_cat_vec)
+        val_acc_cat = accuracy_score(y_val_cat, preds_cat)
+        print(f"9-Class Classifier Accuracy: {val_acc_cat:.4f}")
+        print(classification_report(y_val_cat, preds_cat))
 
-    # Save 9-Class weights
-    with open(os.path.join(MODEL_DIR, "classifier_9class_vec.pkl"), "wb") as f:
-        pickle.dump(cat_vectorizer, f)
-    with open(os.path.join(MODEL_DIR, "classifier_9class_cls.pkl"), "wb") as f:
-        pickle.dump(cat_classifier, f)
-    print("9-Class Classifier weights saved successfully.")
+        # Log parameters and metrics to MLflow
+        MLflowManager.log_params({
+            "model_architecture": "TF-IDF + Logistic Regression (9-Class HF)",
+            "c_regularization": 2.0,
+            "train_size": len(X_train_cat),
+            "val_size": len(X_val_cat),
+            "dataset_size": len(df),
+            "vectorizer_max_features": 2500
+        })
+        MLflowManager.log_metrics({
+            "accuracy": val_acc_cat
+        })
+
+        # Save 9-Class weights
+        with open(os.path.join(MODEL_DIR, "classifier_9class_vec.pkl"), "wb") as f:
+            pickle.dump(cat_vectorizer, f)
+        with open(os.path.join(MODEL_DIR, "classifier_9class_cls.pkl"), "wb") as f:
+            pickle.dump(cat_classifier, f)
+        print("9-Class Classifier weights saved successfully.")
 
 if __name__ == "__main__":
-    # Pull datasets and execute training
-    df = collect_hf_datasets(sample_size=1000)
+    # If the compiled CSV exists, load it directly to train. Otherwise, collect from HF.
+    dataset_path = "data/hf_compiled_dataset.csv"
+    if os.path.exists(dataset_path):
+        print(f"Found local compiled dataset at {dataset_path}. Training directly...")
+        df = pd.read_csv(dataset_path)
+        # Drop rows with missing text values to prevent scikit-learn vectorizer exceptions
+        df = df.dropna(subset=["text"])
+    else:
+        print(f"Local compiled dataset not found. Downloading from Hugging Face...")
+        df = collect_hf_datasets(sample_size=1000)
+    
     train_and_save_classifiers(df)

@@ -39,13 +39,19 @@
                 <a href="#" class="nav-item" data-tab="policies">
                     <i data-lucide="sliders"></i> Policy Settings
                 </a>
+                <a href="#" class="nav-item" data-tab="mlops">
+                    <i data-lucide="cpu"></i> MLOps Platform
+                </a>
             </nav>
-            <div class="user-profile">
+            <div class="user-profile" id="user-profile-box">
                 <div class="avatar">A</div>
                 <div class="user-details">
-                    <span class="username">Admin Account</span>
-                    <span class="role">Security Operations</span>
+                    <span class="username" id="profile-username">Admin Account</span>
+                    <span class="role" id="profile-role">Security Operations</span>
                 </div>
+                <button class="logout-btn" id="logout-btn" title="Log Out">
+                    <i data-lucide="log-out"></i>
+                </button>
             </div>
         </aside>
 
@@ -312,7 +318,170 @@
                 </div>
             </section>
 
+            <!-- TAB CONTENT: MLOPS PLATFORM -->
+            <section class="tab-pane" id="tab-mlops">
+                <!-- MLOps Dashboard Cards -->
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <div class="card-icon blue"><i data-lucide="git-branch"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Scikit-Learn Classifier</span>
+                            <span class="value status-text" id="mlops-status-sklearn">Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon purple"><i data-lucide="cpu"></i></div>
+                        <div class="stat-info">
+                            <span class="label">DistilBERT Classifier</span>
+                            <span class="value status-text" id="mlops-status-distilbert">Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon green"><i data-lucide="refresh-cw"></i></div>
+                        <div class="stat-info">
+                            <span class="label">MLflow Sync Status</span>
+                            <span class="value status-text" id="mlops-status-sync">Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="card-icon blue"><i data-lucide="folder"></i></div>
+                        <div class="stat-info">
+                            <span class="label">Model Weights Directory</span>
+                            <span class="value status-text-sm" id="mlops-status-dir">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main MLOps Content Grid -->
+                <div class="charts-grid">
+                    <!-- MLflow Integration Card -->
+                    <div class="card chart-card flex-col-center">
+                        <div class="mlflow-logo-container">
+                            <svg class="mlflow-icon" viewBox="0 0 100 100" width="80" height="80">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#6366f1" stroke-width="4"></circle>
+                                <path d="M50 20 L50 80 M30 40 L70 40 M30 60 L70 60" stroke="#6366f1" stroke-width="6" stroke-linecap="round"></path>
+                            </svg>
+                        </div>
+                        <h3>MLflow Tracking Registry</h3>
+                        <p class="description-text">
+                            Link directly with the MLflow instance to audit experiment history, model registry logs, run parameters, and evaluation metrics.
+                        </p>
+                        <div class="mlflow-connection-status">
+                            <span class="pulse-dot active" id="mlflow-conn-dot"></span>
+                            <span id="mlflow-conn-text">Server Operational</span>
+                        </div>
+                        <a href="/mlflow/" target="_blank" class="btn btn-primary launch-mlflow-btn" id="mlflow-launch-link">
+                            <i data-lucide="external-link"></i> Launch MLflow UI
+                        </a>
+                    </div>
+
+                    <!-- Data Drift Detection Panel -->
+                    <div class="card chart-card">
+                        <h3>Real-time Data Drift Auditor</h3>
+                        <p class="description-text mb-4">
+                            Performs data drift evaluation dynamically by running Population Stability Index (PSI) and Kolmogorov-Smirnov statistical tests between the baseline training distribution and live user prompts.
+                        </p>
+                        
+                        <div class="drift-metrics-display">
+                            <div class="drift-metric-row">
+                                <span>Population Stability Index (PSI)</span>
+                                <strong id="drift-psi-val">--</strong>
+                            </div>
+                            <div class="drift-metric-row">
+                                <span>KS Statistic</span>
+                                <strong id="drift-ks-val">--</strong>
+                            </div>
+                            <div class="drift-metric-row">
+                                <span>KS p-value</span>
+                                <strong id="drift-p-val">--</strong>
+                            </div>
+                            <div class="drift-metric-row mt-3">
+                                <span>Current Drift Index</span>
+                                <span class="status-badge allowed" id="drift-status-badge">STABLE</span>
+                            </div>
+                        </div>
+
+                        <div class="action-footer border-none p-0 mt-4">
+                            <button class="btn btn-primary w-full justify-center" id="run-drift-check-btn">
+                                <i data-lucide="radar"></i> Evaluate Data Drift
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retraining Engine Panel -->
+                <div class="card list-card">
+                    <div class="card-header border-none pb-0">
+                        <div>
+                            <h3>Active Learning & Retraining Pipeline</h3>
+                            <p class="description-text mt-1">
+                                Triggers the automated model training pipeline. Queries active MongoDB audit history logs, updates dataset registry (via DVC), compiles weights, and registers the candidate in the MLflow Model Registry.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="retrain-console-area mt-4">
+                        <div class="console-metrics-row">
+                            <div class="console-metric">
+                                <span class="label">Last Dataset Records</span>
+                                <strong id="retrain-stat-records">--</strong>
+                            </div>
+                            <div class="console-metric">
+                                <span class="label">Last Trained Accuracy</span>
+                                <strong id="retrain-stat-accuracy">--</strong>
+                            </div>
+                            <div class="console-metric">
+                                <span class="label">Last Tracked DVC Hash</span>
+                                <strong id="retrain-stat-dvc">--</strong>
+                            </div>
+                            <div class="console-metric">
+                                <span class="label">Deep Learning Pipeline</span>
+                                <strong id="retrain-stat-dl">--</strong>
+                            </div>
+                        </div>
+                        <div class="retrain-trigger-box mt-4">
+                            <button class="btn btn-primary" id="trigger-retrain-btn">
+                                <i data-lucide="play-circle"></i> Trigger Automated Retraining
+                            </button>
+                            <span class="retrain-status-message" id="retrain-status-text">Pipeline Idle</span>
+                            <div class="test-loader hidden ml-2" id="retrain-loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <i data-lucide="shield-alert" class="login-icon"></i>
+                <h2>SecurePrompt AI</h2>
+                <p>Enterprise Console Authentication</p>
+            </div>
+            <form id="login-form">
+                <div class="login-form-group">
+                    <label for="login-username">Username</label>
+                    <div class="input-icon-group">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-username" placeholder="Enter username" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="login-form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-icon-group">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
+                    </div>
+                </div>
+                <div id="login-error-msg" class="login-error hidden"></div>
+                <button type="submit" class="btn btn-primary login-btn">
+                    <span>Authenticate</span>
+                    <div class="test-loader hidden" id="login-loader"></div>
+                </button>
+            </form>
+        </div>
     </div>
     
     <!-- Scripts -->

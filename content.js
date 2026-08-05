@@ -104,10 +104,55 @@
   }
 
   /**
+   * Checks if an element is a file removal, attachment delete, or close button
+   */
+  function isRemoveOrCloseButton(targetEl) {
+    if (!targetEl) return false;
+    let curr = targetEl;
+    let depth = 0;
+    while (curr && depth < 5 && curr !== document.body) {
+      const aria = (curr.getAttribute('aria-label') || '').toLowerCase();
+      const title = (curr.getAttribute('title') || '').toLowerCase();
+      const cls = (curr.className || '').toString().toLowerCase();
+      const id = (curr.id || '').toLowerCase();
+
+      // Check explicit remove/delete/close keywords
+      if (/remove|delete|dismiss|close|cancel|trash|detach/i.test(aria) ||
+          /remove|delete|dismiss|close|cancel|trash|detach/i.test(title) ||
+          /remove|delete|dismiss|close|cancel|trash|detach/i.test(cls) ||
+          /remove|delete|dismiss|close|cancel|trash|detach/i.test(id)) {
+        return true;
+      }
+      
+      // Check if inside attachment chip or file pill container
+      if (curr.closest && (
+          curr.closest('.attachment') || 
+          curr.closest('[data-testid*="attachment"]') || 
+          curr.closest('.file-chip') ||
+          curr.closest('[class*="attachment"]') ||
+          curr.closest('[class*="file-pill"]')
+      )) {
+        const txt = (curr.innerText || curr.textContent || '').trim();
+        if (txt === '' || txt === '×' || txt === 'x' || txt === 'X' || /remove|delete/i.test(txt)) {
+          return true;
+        }
+      }
+
+      curr = curr.parentElement;
+      depth++;
+    }
+    return false;
+  }
+
+  /**
    * Travel up parent nodes to identify the submit button
    */
   function findSubmitButton(targetEl) {
     if (!targetEl) return null;
+    
+    // Explicitly ignore file removal (X) or close buttons
+    if (isRemoveOrCloseButton(targetEl)) return null;
+
     const siteConfig = CONFIG.SITES[siteKey];
     
     let el = targetEl;
@@ -115,6 +160,8 @@
     
     // Traverse up to 6 nodes to find a clickable button
     while (el && depth < 6 && el !== document.body) {
+      if (isRemoveOrCloseButton(el)) return null;
+
       // Check configured selectors
       for (const selector of siteConfig.submitSelectors) {
         if (el.matches && el.matches(selector)) {
@@ -135,7 +182,10 @@
       if (isButtonTag || isButtonRole || hasSendLabel) {
         // Exclude inputs, scroll buttons or unrelated actions
         if (!['INPUT', 'TEXTAREA'].includes(tagName)) {
-          return el;
+          // Extra guard: generic buttons must have send/submit intent or match submit selectors
+          if (hasSendLabel || siteConfig.submitSelectors.some(sel => el.matches && el.matches(sel))) {
+            return el;
+          }
         }
       }
       
@@ -162,13 +212,22 @@
   }
 
   /**
-   * Inject sanitized prompt into editor field in a framework-safe way
+   * Inject sanitized prompt into editor field in a framework-safe way (React/Vue/Angular/Lexical compatible)
    */
   function setInputValue(inputEl, text) {
     if (!inputEl) return;
     
     if (inputEl.tagName === 'TEXTAREA' || inputEl.tagName === 'INPUT') {
-      inputEl.value = text;
+      const prototype = inputEl.tagName === 'TEXTAREA' 
+        ? window.HTMLTextAreaElement.prototype 
+        : window.HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+      
+      if (setter) {
+        setter.call(inputEl, text);
+      } else {
+        inputEl.value = text;
+      }
       inputEl.dispatchEvent(new Event('input', { bubbles: true }));
       inputEl.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (inputEl.getAttribute('contenteditable') === 'true') {
@@ -182,11 +241,15 @@
         selection.addRange(range);
         
         // Execute insertText command (best compatibility for contenteditable frameworks like React/DraftJS/Lexical)
-        document.execCommand('insertText', false, text);
+        const success = document.execCommand('insertText', false, text);
+        if (!success) {
+          throw new Error('execCommand returned false');
+        }
       } catch (e) {
-        console.warn('execCommand failed, falling back to direct DOM manipulation', e);
+        console.warn('[SecurePrompt AI] execCommand failed, falling back to direct DOM manipulation', e);
         inputEl.innerText = text;
-        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
   }
@@ -292,7 +355,9 @@
           setInputValue(activeInputEl, data.sanitized_prompt);
         }
         hideOverlay();
-        submitApprovedPrompt();
+        setTimeout(() => {
+          submitApprovedPrompt();
+        }, 100);
       };
       
       shadowRoot.getElementById('sp-btn-continue').onclick = () => {
@@ -377,10 +442,94 @@
     }, 150);
   }
 
+  /**
+   * Scans DOM for attached files / file upload inputs / composer attachment chips
+   */
+  function getAttachedFileNames(inputEl = null, submitBtn = null) {
+    const fileNames = new Set();
+    const VALID_FILE_REGEX = /[\w\-.\s\(\)]+\.(pdf|docx|doc|xlsx|xls|csv|txt|md|pptx|ppt|zip|png|jpg|jpeg|json|py|js)\b/gi;
+
+    // 1. Check standard file inputs
+    try {
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach(input => {
+        if (input.files && input.files.length > 0) {
+          for (let i = 0; i < input.files.length; i++) {
+            if (input.files[i] && input.files[i].name) {
+              fileNames.add(input.files[i].name.trim());
+            }
+          }
+        }
+      });
+    } catch (e) {}
+
+    // 2. Check DOM elements representing file chips/attachments in composer
+    const searchContainers = [];
+    if (inputEl) {
+      searchContainers.push(inputEl.closest('form') || inputEl.closest('div[class*="composer"]') || inputEl.parentElement?.parentElement);
+    }
+    if (submitBtn) {
+      searchContainers.push(submitBtn.closest('form') || submitBtn.closest('div[class*="composer"]') || submitBtn.parentElement?.parentElement);
+    }
+    searchContainers.push(document.body);
+
+    for (const container of searchContainers) {
+      if (!container) continue;
+
+      // Scan title, data-filename, aria-label, alt attributes for exact filenames
+      try {
+        const attrElements = container.querySelectorAll('[title], [data-filename], [data-file-name], [alt], [aria-label]');
+        attrElements.forEach(el => {
+          ['title', 'data-filename', 'data-file-name', 'alt', 'aria-label'].forEach(attr => {
+            const val = (el.getAttribute(attr) || '').trim();
+            if (val) {
+              const matches = val.match(VALID_FILE_REGEX);
+              if (matches) {
+                matches.forEach(m => fileNames.add(m.trim()));
+              }
+            }
+          });
+        });
+      } catch (e) {}
+
+      // Scan specific attachment chip elements
+      const fileSelectors = [
+        '[data-testid*="file"]',
+        '[data-testid*="attachment"]',
+        '.attachment-item',
+        '.file-chip',
+        '.file-name',
+        '.file-title',
+        'div[class*="attachment"]',
+        'div[class*="file-item"]'
+      ];
+
+      for (const selector of fileSelectors) {
+        try {
+          const els = container.querySelectorAll(selector);
+          els.forEach(el => {
+            const txt = (el.innerText || el.textContent || '').trim();
+            if (txt) {
+              const matches = txt.match(VALID_FILE_REGEX);
+              if (matches) {
+                matches.forEach(m => fileNames.add(m.trim()));
+              }
+            }
+          });
+        } catch (e) {}
+      }
+    }
+
+    return Array.from(fileNames);
+  }
+
   // 7. Core Interception Handler
 
   async function handleIntercept(promptText, inputEl, submitEl = null) {
-    if (!promptText.trim()) return; // Ignore empty inputs
+    const attachedFiles = getAttachedFileNames(inputEl, submitEl);
+
+    // Ignore if BOTH prompt text is empty AND no files are attached
+    if (!promptText.trim() && attachedFiles.length === 0) return;
     
     // Check if security is enabled globally or for current site
     if (!currentSettings || !currentSettings.isEnabled || !currentSettings.sites[siteKey]) {
@@ -394,6 +543,54 @@
     activeInputEl = inputEl;
     activeSubmitEl = submitEl;
 
+    // Document Verification Policy Check
+    if (currentSettings.enableDocumentVerification !== false && Array.isArray(currentSettings.restrictedFiles) && currentSettings.restrictedFiles.length > 0) {
+      const restrictedList = currentSettings.restrictedFiles
+        .map(f => f.toLowerCase().trim())
+        .filter(Boolean);
+
+      if (restrictedList.length > 0) {
+        const lowerPrompt = promptText.toLowerCase();
+        let matchedFile = null;
+
+        for (const restrictedItem of restrictedList) {
+          const cleanRestricted = restrictedItem.toLowerCase().trim();
+          if (!cleanRestricted) continue;
+
+          // Strip extension for base name matching (e.g. confidential_report.pdf -> confidential_report)
+          const baseRestricted = cleanRestricted.replace(/\.[a-z0-9]+$/i, '').trim();
+
+          // 1. Check attached DOM file names extracted from file inputs and chips
+          for (const fname of attachedFiles) {
+            const lowerFname = fname.toLowerCase();
+            if (lowerFname === cleanRestricted || lowerFname.includes(cleanRestricted) || (baseRestricted.length >= 4 && lowerFname.includes(baseRestricted))) {
+              matchedFile = fname;
+              break;
+            }
+          }
+          if (matchedFile) break;
+
+          // 2. Check prompt text body
+          if (lowerPrompt.includes(cleanRestricted) || (baseRestricted.length >= 4 && lowerPrompt.includes(baseRestricted))) {
+            matchedFile = restrictedItem;
+            break;
+          }
+        }
+
+        if (matchedFile) {
+          console.warn(`[SecurePrompt AI] Document Verification BLOCKED: Restricted file '${matchedFile}' detected.`);
+          showOverlay('BLOCK', {
+            risk_score: 100,
+            risk_level: 'CRITICAL',
+            reason: `Document Verification Failure: Upload or transmission of restricted document '${matchedFile}' is prohibited by security policy.`,
+            prompt: promptText || `[Attached File: ${matchedFile}]`,
+            flagged_terms: [matchedFile]
+          });
+          return; // Stop and block sending entirely!
+        }
+      }
+    }
+
     // Show loading overlay
     showOverlay('LOADING');
 
@@ -406,7 +603,8 @@
         action: 'scanPrompt',
         promptText: promptText,
         siteKey: siteKey,
-        url: window.location.href
+        url: window.location.href,
+        uploadedFiles: attachedFiles
       }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('[SecurePrompt AI] IPC Communication Error:', chrome.runtime.lastError);
@@ -485,11 +683,10 @@
     // Standard rule: Enter submits, Shift+Enter adds newline
     let shouldSubmit = isEnter && !isShift;
     
-    // If Copilot/OpenRouter require Ctrl+Enter, we can check that.
-    // Generally, standard enter is used on AI chats.
     if (shouldSubmit) {
       const promptText = getInputValue(target);
-      if (!promptText.trim()) return; // Don't intercept empty prompts
+      const attachedFiles = getAttachedFileNames(target);
+      if (!promptText.trim() && attachedFiles.length === 0) return; // Don't intercept completely empty inputs
       
       // Stop the host website from immediately submitting
       event.preventDefault();
@@ -511,7 +708,8 @@
     if (!inputEl) return;
 
     const promptText = getInputValue(inputEl);
-    if (!promptText.trim()) return;
+    const attachedFiles = getAttachedFileNames(inputEl, submitBtn);
+    if (!promptText.trim() && attachedFiles.length === 0) return;
 
     // Intercept click event
     event.preventDefault();

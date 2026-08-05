@@ -32,10 +32,13 @@ class PromptClassifier:
 
         if os.path.exists(self.vectorizer_path) and os.path.exists(self.classifier_path):
             try:
-                with open(self.vectorizer_path, "rb") as f:
-                    self.vectorizer = pickle.load(f)
-                with open(self.classifier_path, "rb") as f:
-                    self.classifier = pickle.load(f)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    with open(self.vectorizer_path, "rb") as f:
+                        self.vectorizer = pickle.load(f)
+                    with open(self.classifier_path, "rb") as f:
+                        self.classifier = pickle.load(f)
                 logger.info("Loaded 9-class Prompt Classifier.")
             except Exception as e:
                 logger.error(f"Failed to load 9-class prompt classifier: {e}. Re-training model.")

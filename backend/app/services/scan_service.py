@@ -38,8 +38,8 @@ class ScanService:
                 department = user.get("department", "Engineering")
 
         # Run advanced firewall (includes similarity check, code detector, 9-class classifier)
-        from engine.firewall import PromptFirewall
-        firewall = PromptFirewall()
+        from engine.firewall import get_firewall_instance
+        firewall = get_firewall_instance()
         firewall_res = firewall.scan_and_decide(
             prompt_text=scan_in.prompt,
             department=department
@@ -74,6 +74,7 @@ class ScanService:
             "category": firewall_res["category"],
             "complianceStatus": compliance_status,
             "browserInfo": scan_in.browser_info.model_dump(),
+            "uploadedFiles": scan_in.uploaded_files or [],
             "session_id": scan_in.session_id
         }
 

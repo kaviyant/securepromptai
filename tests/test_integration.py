@@ -11,7 +11,14 @@ DATABASE_NAME = os.getenv("DATABASE_NAME", "secureprompt_test_db")
 class TestSecurePromptIntegration(unittest.TestCase):
     def setUp(self):
         # Establish async loop
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.loop = asyncio.get_event_loop()
+            if self.loop.is_closed():
+                self.loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.loop)
+        except RuntimeError:
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
         
         # Connect to test DB
         self.client = AsyncIOMotorClient(MONGODB_URL)

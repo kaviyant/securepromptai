@@ -27,6 +27,10 @@ async def lifespan(app: FastAPI):
     """
     # Startup actions
     await connect_to_mongo()
+    logger.info("Pre-loading AI/ML security firewall models into memory...")
+    from engine.firewall import get_firewall_instance
+    get_firewall_instance()
+    logger.info("AI/ML security firewall models loaded successfully.")
     yield
     # Shutdown actions
     await close_mongo_connection()

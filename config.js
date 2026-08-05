@@ -28,6 +28,8 @@ const CONFIG = {
     backendUrl: 'http://localhost:8000',
     isEnabled: true,
     enableNotifications: true,
+    enableDocumentVerification: true,
+    restrictedFiles: ['confidential_report.pdf', 'financials_2026.xlsx', 'secret_keys.docx'],
     sensitivityThreshold: 50, // default sensitivity threshold
     interceptionMode: 'MANUAL', // 'MANUAL' (Edit manually), 'AUTO_REVIEW' (Autofill & review), 'AUTO_SEND' (Silent auto-send)
     sites: {

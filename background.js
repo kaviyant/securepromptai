@@ -59,11 +59,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * @param {function} sendResponse Callback to return scanning results
  */
 async function handleScanRequest(request, sendResponse) {
-  const { promptText, siteKey, url } = request;
+  const { promptText, siteKey, url, uploadedFiles } = request;
   
   try {
     // 1. Perform the API call via our api.js module (runs in background context to bypass host page CSP)
-    const scanResult = await Api.scanPrompt(promptText, siteKey, url);
+    const scanResult = await Api.scanPrompt(promptText, siteKey, url, uploadedFiles);
     
     // If it's an allow/warn/block action, write it to history
     await saveScanToHistory({

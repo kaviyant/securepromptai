@@ -1,0 +1,3 @@
+outs:
+- path: classifier.pkl
+  desc: Mock version control metadata

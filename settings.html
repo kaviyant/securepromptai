@@ -238,36 +238,35 @@
           </div>
         </section>
 
-        <!-- Section 4: Confidential Document Indexer -->
+
+
+        <!-- Section 5: Document Verification & File Upload Protection -->
         <section class="section-card">
           <div class="section-title-group">
-            <h3>Confidential Document Indexer</h3>
-            <p>Upload corporate documents (PDF, DOCX, CSV, Excel, TXT, MD) to the similarity database so that similar prompts are blocked.</p>
+            <h3>Document Verification & File Upload Protection</h3>
+            <p>Specify restricted file names or keywords. If a file with a matching name is uploaded or attached on any AI platform (ChatGPT, Gemini, Claude, Copilot, etc.), the transmission will be blocked.</p>
           </div>
           
-          <div class="form-group">
-            <label for="admin-token">Admin Authorization Token</label>
-            <input type="password" id="admin-token" placeholder="Bearer Token from Admin Dashboard">
-            <p class="help-text">Required to authenticate document upload requests to the backend.</p>
-          </div>
+          <div class="form-grid-stack">
+            <div class="form-grid-row">
+              <div class="form-grid-label-group">
+                <label for="opt-doc-verify">Enable Document Verification & File Block</label>
+                <p class="help-text">Intercept and block AI prompt submissions whenever attached or referenced document names match restricted file lists.</p>
+              </div>
+              <div class="form-grid-control">
+                <label class="switch">
+                  <input type="checkbox" id="opt-doc-verify" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
 
-          <div class="form-group">
-            <label for="doc-name">Custom Document Name / ID (Optional)</label>
-            <input type="text" id="doc-name" placeholder="e.g. project_roadmap_2026 (Defaults to filename)">
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="restricted-files">Restricted Document / File Names (One per line or comma-separated)</label>
+              <textarea id="restricted-files" class="form-textarea" rows="4" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font-family: inherit; font-size: 14px; resize: vertical;" placeholder="e.g.&#10;confidential_report.pdf&#10;financials_2026.xlsx&#10;secret_keys.docx&#10;payroll.csv"></textarea>
+              <p class="help-text">Uploads or prompts containing any of these restricted document names will be blocked instantly before sending.</p>
+            </div>
           </div>
-
-          <div class="form-group">
-            <label for="doc-file">Choose Document File</label>
-            <input type="file" id="doc-file" accept=".txt,.md,.csv,.pdf,.docx,.xlsx,.xls" required>
-          </div>
-
-          <div class="action-footer" style="padding: 0; margin-top: 15px;">
-            <button type="button" id="btn-upload-doc" class="btn-action" style="width: 100%; display: flex; justify-content: center; align-items: center;">
-              <span id="upload-text">Upload & Index Document</span>
-              <div class="test-loader hidden" id="upload-loader"></div>
-            </button>
-          </div>
-          <div id="upload-result" class="conn-result hidden" style="margin-top: 10px;"></div>
         </section>
 
         <!-- Save Button Section -->

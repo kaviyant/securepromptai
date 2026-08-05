@@ -48,7 +48,9 @@ class DvcManager:
         
         # 1. Export dataset
         logger.info(f"Generating dataset of size {size} to version-control: {dataset_path}")
-        df = DatasetGenerator.generate_dataframe(size=size)
+        import pandas as pd
+        df_dict = DatasetGenerator.generate_dataframe(size=size)
+        df = pd.DataFrame(df_dict)
         df.to_csv(dataset_path, index=False)
         
         # 2. Initialize DVC if needed

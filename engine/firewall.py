@@ -9,6 +9,14 @@ from engine.sanitizer import PromptSanitizer
 
 logger = logging.getLogger("secureprompt")
 
+_firewall_instance: Optional["PromptFirewall"] = None
+
+def get_firewall_instance(model_dir: str = "model", db_dir: str = "model/chromadb") -> "PromptFirewall":
+    global _firewall_instance
+    if _firewall_instance is None:
+        _firewall_instance = PromptFirewall(model_dir=model_dir, db_dir=db_dir)
+    return _firewall_instance
+
 class PromptFirewall:
     def __init__(self, model_dir: str = "model", db_dir: str = "model/chromadb"):
         self.pipeline = DetectionPipeline(model_dir=model_dir)

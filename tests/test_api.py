@@ -4,8 +4,9 @@ from backend.app.main import app
 
 class TestSecurePromptAPI(unittest.TestCase):
     def setUp(self):
-        # Instantiate test client
-        self.client = TestClient(app)
+        # Instantiate test client with lifespan context
+        self.client_ctx = TestClient(app)
+        self.client = self.client_ctx.__enter__()
         
         # Self-register and login admin to obtain credentials for gated endpoints
         admin_register_payload = {
@@ -27,6 +28,10 @@ class TestSecurePromptAPI(unittest.TestCase):
             self.headers = {"Authorization": f"Bearer {token_data['access_token']}"}
         else:
             self.headers = {}
+
+    def tearDown(self):
+        # Exit lifespan context cleanly
+        self.client_ctx.__exit__(None, None, None)
 
     # 1. Test Public Health Endpoints
     def test_health_check(self):
@@ -54,7 +59,7 @@ class TestSecurePromptAPI(unittest.TestCase):
 
     # 4. Test Content classification endpoint
     def test_classify_endpoint(self):
-        payload = {"prompt": "We need to hire a new software engineer."}
+        payload = {"prompt": "We need to review our hiring pipeline for software engineers."}
         response = self.client.post("/api/classify", json=payload, headers=self.headers)
         if response.status_code == 200:
             data = response.json()

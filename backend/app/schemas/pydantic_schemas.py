@@ -47,6 +47,7 @@ class PromptScanRequest(BaseModel):
     timestamp: int = Field(..., examples=[1680000000000])
     session_id: str = Field(..., examples=["uuid-1234-5678"])
     browser_info: BrowserInfoSchema
+    uploaded_files: Optional[List[str]] = Field(default=[], examples=[["confidential_report.pdf"]])
 
 class PromptScanResponse(BaseModel):
     risk_score: int = Field(..., ge=0, le=100, examples=[95])

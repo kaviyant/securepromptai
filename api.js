@@ -10,7 +10,7 @@ const Api = {
    * @param {string} url The full webpage URL
    * @returns {Promise<object>} The scan result object
    */
-  async scanPrompt(promptText, siteKey, url) {
+  async scanPrompt(promptText, siteKey, url, uploadedFiles = []) {
     try {
       // 1. Fetch current settings from chrome storage
       const settings = await new Promise((resolve) => {
@@ -40,7 +40,8 @@ const Api = {
         website: url,
         timestamp: timestamp,
         session_id: sessionId,
-        browser_info: browserInfo
+        browser_info: browserInfo,
+        uploaded_files: uploadedFiles || []
       };
 
       const backendUrl = settings.backendUrl || CONFIG.DEFAULT_BACKEND_URL;

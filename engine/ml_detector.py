@@ -105,10 +105,13 @@ class MLDetector:
         """
         if os.path.exists(self.vectorizer_path) and os.path.exists(self.classifier_path):
             try:
-                with open(self.vectorizer_path, "rb") as f:
-                    self.vectorizer = pickle.load(f)
-                with open(self.classifier_path, "rb") as f:
-                    self.classifier = pickle.load(f)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    with open(self.vectorizer_path, "rb") as f:
+                        self.vectorizer = pickle.load(f)
+                    with open(self.classifier_path, "rb") as f:
+                        self.classifier = pickle.load(f)
                 logger.info("Loaded local Scikit-learn ML classifier and vectorizer.")
             except Exception as e:
                 logger.error(f"Failed to load Scikit-learn model: {e}. Re-training model.")

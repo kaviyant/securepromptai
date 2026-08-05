@@ -1,0 +1,3 @@
+outs:
+- path: vectorizer.pkl
+  desc: Mock version control metadata
